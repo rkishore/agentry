@@ -17,6 +17,6 @@ boundaries:
 	uv run lint-imports
 
 slice:
-	uv run python -m agentry.app.cli ingest tests/fixtures
-	uv run python -m agentry.app.cli query "$$(uv run python -c 'import json; print(json.load(open("tests/fixtures/eval.json"))["question"])')"
-	uv run python -m agentry.app.cli eval tests/fixtures/eval.json
+	uv run python -m agentry.entrypoints.cli ingest tests/fixtures
+	uv run python -m agentry.entrypoints.cli query "$$(uv run python -c 'import json; print(json.load(open("tests/fixtures/eval.json"))["question"])')"
+	uv run python -m agentry.entrypoints.cli eval tests/fixtures/eval.json

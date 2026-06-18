@@ -70,7 +70,7 @@ include_external_packages = true
 name = "Hexagonal layers"
 type = "layers"
 layers = [
-    "agentry.app",
+    "agentry.entrypoints",
     "agentry.application | agentry.infrastructure",
     "agentry.core",
 ]

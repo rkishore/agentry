@@ -1,6 +1,6 @@
 """CLI entrypoint: ``ingest``, ``query``, and ``eval`` commands.
 
-Run as ``python -m agentry.app.cli <command>``.
+Run as ``python -m agentry.entrypoints.cli <command>``.
 """
 
 from __future__ import annotations
@@ -10,8 +10,8 @@ import json
 from pathlib import Path
 from uuid import uuid4
 
-from agentry.app import composition
 from agentry.core.models import Document, EvalCase
+from agentry.entrypoints import composition
 
 
 def _load_documents(directory: str) -> list[Document]:

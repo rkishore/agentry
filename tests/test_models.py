@@ -3,8 +3,22 @@ from agentry.core.models import (
     AnswerProduced,
     EvalResult,
     LlmCallCompleted,
+    Message,
     RetrievalCompleted,
 )
+
+
+def Message_Constructed_HoldsRoleAndContent():
+    message = Message(role="user", content="What is the capital of France?")
+    assert message.role == "user"
+    assert message.content == "What is the capital of France?"
+
+
+def Message_SystemAndAssistantRoles_AreAccepted():
+    system = Message(role="system", content="You are a helpful assistant.")
+    assistant = Message(role="assistant", content="Paris.")
+    assert system.role == "system"
+    assert assistant.role == "assistant"
 
 
 def Answer_NoFields_DefaultsToEmptyDict():

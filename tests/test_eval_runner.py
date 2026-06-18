@@ -15,7 +15,7 @@ class _AnswerLlm:
     def __init__(self, text):
         self._text = text
 
-    def complete(self, prompt):
+    def complete(self, messages):
         return LlmCompletion(text=self._text, model="stub", prompt_tokens=1, completion_tokens=1)
 
 

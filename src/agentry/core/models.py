@@ -6,6 +6,15 @@ Zero third-party imports — stdlib ``dataclasses`` only.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Literal
+
+
+@dataclass(frozen=True)
+class Message:
+    """A single chat message. Primitives only — ``core`` stays dependency-free."""
+
+    role: Literal["system", "user", "assistant"]
+    content: str
 
 
 @dataclass(frozen=True)

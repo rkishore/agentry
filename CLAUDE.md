@@ -27,12 +27,12 @@ Hexagonal layering under `src/agentry/`:
 - `core/` — pure domain: dataclasses + `typing.Protocol` ports. **Zero third-party imports.**
 - `application/` — orchestration. Imports `core` **only**.
 - `infrastructure/` — adapters (Chroma, embedders, LLM client, audit sink, tracer). Imports
-  `core` plus its own tech libs **only** — never `application`, never `app`.
-- `app/` — composition root + CLI. May import all inner layers.
+  `core` plus its own tech libs **only** — never `application`, never `entrypoints`.
+- `entrypoints/` — composition root + CLI. May import all inner layers.
 
 Dependency arrows point inward. `application` and `infrastructure` are independent siblings —
 neither imports the other. Domain- and benchmark-specific code (FinanceBench loaders, finance
-graders, future SOP tools) lives in `app`/`infrastructure`, **never** in `core`/`application`.
+graders, future SOP tools) lives in `entrypoints`/`infrastructure`, **never** in `core`/`application`.
 These boundaries are machine-enforced (Gate 3); a violation fails the sprint even if it compiles.
 
 ## Conventions

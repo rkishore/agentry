@@ -2,10 +2,19 @@
 
 from __future__ import annotations
 
-from agentry.core.models import LlmCompletion
+from typing import Any
+
+from agentry.core.models import LlmCompletion, Message
 
 _CONTEXT_MARKER = "Context:"
 _QUESTION_MARKER = "\n\nQuestion:"
+
+
+def _last_user_content(messages: list[Message]) -> str:
+    for message in reversed(messages):
+        if message.role == "user":
+            return message.content
+    return messages[-1].content if messages else ""
 
 
 class OpenAiLlmClient:
@@ -14,13 +23,13 @@ class OpenAiLlmClient:
     def __init__(self, model: str = "gpt-4o-mini") -> None:
         from openai import OpenAI
 
-        self._client = OpenAI()
+        self._client: Any = OpenAI()
         self._model = model
 
-    def complete(self, prompt: str) -> LlmCompletion:
+    def complete(self, messages: list[Message]) -> LlmCompletion:
         response = self._client.chat.completions.create(
             model=self._model,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{"role": message.role, "content": message.content} for message in messages],
         )
         text = response.choices[0].message.content or ""
         usage = response.usage
@@ -38,15 +47,22 @@ class AnthropicLlmClient:
     def __init__(self, model: str = "claude-sonnet-4-6") -> None:
         from anthropic import Anthropic
 
-        self._client = Anthropic()
+        self._client: Any = Anthropic()
         self._model = model
 
-    def complete(self, prompt: str) -> LlmCompletion:
-        response = self._client.messages.create(
-            model=self._model,
-            max_tokens=1024,
-            messages=[{"role": "user", "content": prompt}],
-        )
+    def complete(self, messages: list[Message]) -> LlmCompletion:
+        system = "\n".join(m.content for m in messages if m.role == "system")
+        conversation = [
+            {"role": m.role, "content": m.content} for m in messages if m.role != "system"
+        ]
+        kwargs: dict[str, object] = {
+            "model": self._model,
+            "max_tokens": 1024,
+            "messages": conversation,
+        }
+        if system:
+            kwargs["system"] = system
+        response = self._client.messages.create(**kwargs)
         text = "".join(
             block.text for block in response.content if getattr(block, "type", None) == "text"
         )
@@ -64,19 +80,24 @@ class FakeLlmClient:
 
     model = "fake-llm-v0"
 
-    def complete(self, prompt: str) -> LlmCompletion:
-        text = self._grounded_answer(prompt)
+    def complete(self, messages: list[Message]) -> LlmCompletion:
+        text = self._grounded_answer(_last_user_content(messages))
+        prompt_tokens = sum(len(message.content.split()) for message in messages)
         return LlmCompletion(
             text=text,
             model=self.model,
-            prompt_tokens=len(prompt.split()),
+            prompt_tokens=prompt_tokens,
             completion_tokens=len(text.split()),
         )
 
     @staticmethod
-    def _grounded_answer(prompt: str) -> str:
-        if _CONTEXT_MARKER not in prompt:
-            return prompt.strip()
-        start = prompt.index(_CONTEXT_MARKER) + len(_CONTEXT_MARKER)
-        end = prompt.index(_QUESTION_MARKER) if _QUESTION_MARKER in prompt else len(prompt)
-        return prompt[start:end].strip()
+    def _grounded_answer(user_content: str) -> str:
+        if _CONTEXT_MARKER not in user_content:
+            return user_content.strip()
+        start = user_content.index(_CONTEXT_MARKER) + len(_CONTEXT_MARKER)
+        end = (
+            user_content.index(_QUESTION_MARKER)
+            if _QUESTION_MARKER in user_content
+            else len(user_content)
+        )
+        return user_content[start:end].strip()

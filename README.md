@@ -13,7 +13,7 @@ Hexagonal (ports-and-adapters) layering under `src/agentry/`, dependency arrows 
 | `core/` | pure domain — dataclasses + `typing.Protocol` ports | stdlib only |
 | `application/` | orchestration (`RagPipeline`, `EvalRunner`) | `core` only |
 | `infrastructure/` | adapters (Chroma, embedders, LLM clients, audit, tracer) | `core` + own tech libs |
-| `app/` | composition root + CLI | all inner layers |
+| `entrypoints/` | composition root + CLI | all inner layers |
 
 `application` and `infrastructure` are independent siblings. Boundaries are machine-enforced with
 import-linter (`make boundaries`).

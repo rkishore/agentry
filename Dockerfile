@@ -20,5 +20,5 @@ COPY tests/fixtures ./tests/fixtures
 
 ENV PATH="/app/.venv/bin:$PATH"
 
-ENTRYPOINT ["python", "-m", "agentry.app.cli"]
+ENTRYPOINT ["python", "-m", "agentry.entrypoints.cli"]
 CMD ["--help"]

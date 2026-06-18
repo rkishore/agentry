@@ -25,9 +25,9 @@ lint:       uv run ruff check . && uv run ruff format --check .
 typecheck:  uv run mypy src
 test:       uv run pytest
 boundaries: uv run lint-imports
-slice:      uv run python -m agentry.app.cli ingest tests/fixtures \
-         && uv run python -m agentry.app.cli query "$(shell cat tests/fixtures/eval.json | python -c 'import sys,json;print(json.load(sys.stdin)["question"])')" \
-         && uv run python -m agentry.app.cli eval tests/fixtures/eval.json
+slice:      uv run python -m agentry.entrypoints.cli ingest tests/fixtures \
+         && uv run python -m agentry.entrypoints.cli query "$(shell cat tests/fixtures/eval.json | python -c 'import sys,json;print(json.load(sys.stdin)["question"])')" \
+         && uv run python -m agentry.entrypoints.cli eval tests/fixtures/eval.json
 ```
 
 ### Gate 6 — what the slice must prove
@@ -47,10 +47,10 @@ in one run:
 
 | Package | May import | Must NOT import |
 | --- | --- | --- |
-| `agentry.core` | stdlib only (`dataclasses`, `typing`) | any third-party; `application`, `infrastructure`, `app` |
-| `agentry.application` | `agentry.core` | `infrastructure`, `app`; benchmark/domain libs |
-| `agentry.infrastructure` | `agentry.core` + own tech libs | `agentry.application`, `agentry.app` |
-| `agentry.app` | `core`, `application`, `infrastructure` | — |
+| `agentry.core` | stdlib only (`dataclasses`, `typing`) | any third-party; `application`, `infrastructure`, `entrypoints` |
+| `agentry.application` | `agentry.core` | `infrastructure`, `entrypoints`; benchmark/domain libs |
+| `agentry.infrastructure` | `agentry.core` + own tech libs | `agentry.application`, `agentry.entrypoints` |
+| `agentry.entrypoints` | `core`, `application`, `infrastructure` | — |
 | `tests` | all | — |
 
 `application` and `infrastructure` are **independent siblings** — neither may import the other.
@@ -65,7 +65,7 @@ root_package = "agentry"
 name = "Hexagonal layers"
 type = "layers"
 layers = [
-    "agentry.app",
+    "agentry.entrypoints",
     "agentry.application | agentry.infrastructure",
     "agentry.core",
 ]

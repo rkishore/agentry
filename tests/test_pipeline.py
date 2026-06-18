@@ -13,11 +13,12 @@ class _StubRetriever:
 
 
 class _StubLlm:
-    def complete(self, prompt):
+    def complete(self, messages):
+        prompt_tokens = sum(len(message.content.split()) for message in messages)
         return LlmCompletion(
             text="The capital of France is Paris.",
             model="stub-llm",
-            prompt_tokens=len(prompt.split()),
+            prompt_tokens=prompt_tokens,
             completion_tokens=3,
         )
 

@@ -64,9 +64,10 @@ def Slice_FakesAndInMemoryExporter_ProducesScoreEventStreamAndSpan(tmp_path):
 
     results, aggregate = runner.run(cases)
 
-    # (a) a numeric EvalResult score.
+    # (a) a numeric EvalResult score, identical to Sprint 0 (behavior preserved).
     assert isinstance(aggregate, float)
     assert results and isinstance(results[0].score, float)
+    assert aggregate == 1.0
 
     # (b) an append-only typed event stream carrying the required payload.
     records = [json.loads(line) for line in audit_path.read_text(encoding="utf-8").splitlines()]

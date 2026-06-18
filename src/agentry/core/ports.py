@@ -11,6 +11,7 @@ from typing import Any, Protocol
 from agentry.core.models import (
     Chunk,
     LlmCompletion,
+    Message,
     RetrievedChunk,
     RunEvent,
 )
@@ -37,9 +38,9 @@ class Retriever(Protocol):
 
 
 class LlmClient(Protocol):
-    """Completes a prompt, returning the text plus call metadata."""
+    """Completes a list of messages, returning the text plus call metadata."""
 
-    def complete(self, prompt: str) -> LlmCompletion: ...
+    def complete(self, messages: list[Message]) -> LlmCompletion: ...
 
 
 class Grader(Protocol):

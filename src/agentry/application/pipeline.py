@@ -8,17 +8,29 @@ from agentry.core.models import (
     Answer,
     AnswerProduced,
     LlmCallCompleted,
+    Message,
     RetrievalCompleted,
     RetrievedChunk,
     RunStarted,
 )
 from agentry.core.ports import AuditSink, LlmClient, Retriever, Tracer
 
+_SYSTEM_PROMPT = "You are a helpful assistant. Answer the question using only the provided context."
 
-def build_prompt(question: str, chunks: list[RetrievedChunk]) -> str:
-    """Assemble a grounded prompt from the retrieved context and the question."""
+
+def build_messages(question: str, chunks: list[RetrievedChunk]) -> list[Message]:
+    """Assemble a grounded system + user message pair from the context and the question."""
     context = "\n".join(rc.chunk.text for rc in chunks)
-    return f"Context:\n{context}\n\nQuestion: {question}\nAnswer:"
+    user_content = f"Context:\n{context}\n\nQuestion: {question}"
+    return [
+        Message(role="system", content=_SYSTEM_PROMPT),
+        Message(role="user", content=user_content),
+    ]
+
+
+def _flatten(messages: list[Message]) -> str:
+    """Flatten messages to ``role: content`` lines for the unchanged audit prompt field."""
+    return "\n".join(f"{message.role}: {message.content}" for message in messages)
 
 
 class RagPipeline:
@@ -47,14 +59,14 @@ class RagPipeline:
             chunk_ids = [rc.chunk.chunk_id for rc in retrieved]
             self._audit.emit(RetrievalCompleted(run_id=run_id, chunk_ids=chunk_ids))
 
-            prompt = build_prompt(question, retrieved)
+            messages = build_messages(question, retrieved)
             started = time.perf_counter()
-            completion = self._llm.complete(prompt)
+            completion = self._llm.complete(messages)
             latency_ms = (time.perf_counter() - started) * 1000.0
             self._audit.emit(
                 LlmCallCompleted(
                     run_id=run_id,
-                    prompt=prompt,
+                    prompt=_flatten(messages),
                     model=completion.model,
                     prompt_tokens=completion.prompt_tokens,
                     completion_tokens=completion.completion_tokens,
