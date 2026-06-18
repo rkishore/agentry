@@ -1,0 +1,90 @@
+[project]
+name = "agentry"
+version = "0.0.0"
+requires-python = ">=3.11"
+dependencies = [
+    # chromadb: the only VectorStore adapter this sprint; runs fully in-memory/on-disk, no server.
+    "chromadb>=0.5",
+    # opentelemetry: Tracer port adapter; spans are load-bearing from the first commit.
+    "opentelemetry-api>=1.27",
+    "opentelemetry-sdk>=1.27",
+]
+
+[project.optional-dependencies]
+# "real" adapters behind existing ports; not needed for the hermetic test/slice path.
+real = [
+    # sentence-transformers: the 384-dim real Embedder (local, no API key).
+    "sentence-transformers>=3.0",
+    # openai / anthropic: the two real LlmClient adapters selected via AGENTRY_LLM_PROVIDER.
+    "openai>=1.40",
+    "anthropic>=0.34",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "pytest>=8.0",
+    "import-linter>=2.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentry"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src"]
+
+[[tool.mypy.overrides]]
+module = [
+    "chromadb.*",
+    "sentence_transformers.*",
+    "openai.*",
+    "anthropic.*",
+    "opentelemetry.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Tests follow MethodOrScenario_Condition_ExpectedResult (>= 2 underscores), not test_*.
+python_functions = ["*_*_*"]
+
+[tool.importlinter]
+root_package = "agentry"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Hexagonal layers"
+type = "layers"
+layers = [
+    "agentry.app",
+    "agentry.application | agentry.infrastructure",
+    "agentry.core",
+]
+
+[[tool.importlinter.contracts]]
+name = "Core is dependency-free"
+type = "forbidden"
+source_modules = ["agentry.core"]
+forbidden_modules = [
+    "chromadb",
+    "sentence_transformers",
+    "openai",
+    "anthropic",
+    "opentelemetry",
+    "langfuse",
+    "pydantic",
+]

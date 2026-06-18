@@ -29,6 +29,8 @@ A precise list. Every path and every type must exist for Gate 4 to pass.
 **`src/agentry/core/`** — pure domain, zero third-party imports (stdlib `dataclasses` + `typing.Protocol` only)
 - `models.py` — `Document`, `Chunk`, `RetrievedChunk`, `Answer` (carries optional
   `fields: dict[str, str]` for forward-compat with Phase 1 structured extraction),
+  `LlmCompletion` (text + model id + prompt/completion tokens; the value the `LlmClient`
+  port returns and the source of the metadata `LlmCallCompleted` records),
   `EvalCase`, `EvalResult`, and the typed event stream: `RunEvent` (base),
   `RunStarted`, `RetrievalCompleted`, `LlmCallCompleted`, `AnswerProduced`, `EvalCompleted`
 - `ports.py` — `Embedder`, `VectorStore`, `Retriever`, `LlmClient`, `Grader`, `AuditSink`, `Tracer`
@@ -83,6 +85,13 @@ A precise list. Every path and every type must exist for Gate 4 to pass.
   to `openai`. Having two adapters behind one port is itself a check that the port is honest. The
   human sets `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` in their own environment; keys are never
   hardcoded or committed. Tests use `FakeLlmClient`, so CI needs no key and makes no network calls.
+- **`AGENTRY_USE_FAKES` (default `1`) selects fake vs. real adapters at the composition root.**
+  Defaulting to fakes is what lets `make slice` and CI run hermetically with no key or network.
+  `AGENTRY_USE_FAKES=0 make slice` exercises the real local embedder + real LLM and is documented
+  in the README. Real-adapter libraries (`sentence-transformers`, `openai`, `anthropic`) are an
+  optional `[real]` extra, lazy-imported inside the adapters so the hermetic path stays import-clean.
+  (Known limitation, noted for Phase 1: this single flag couples the embedder and LLM axes, which
+  will want to split once retrieval is tuned against a fake LLM.)
 - **Grading is deterministic this sprint** (no LLM judge). Structured output extraction and
   Ragas/numeric-tolerance/judge grading are Phase 1; the optional `Answer.fields` slot is the seam.
 - **Tooling: `uv`** for install/lockfile and `uv run` for gate commands (pip is a fallback).

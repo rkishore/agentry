@@ -1,0 +1,20 @@
+# Phase-0 service topology. langfuse is present-but-unused this sprint (wired in Phase 5).
+services:
+  app:
+    build: .
+    environment:
+      AGENTRY_LLM_PROVIDER: ${AGENTRY_LLM_PROVIDER:-openai}
+      AGENTRY_USE_FAKES: ${AGENTRY_USE_FAKES:-1}
+    depends_on:
+      - chroma
+      - langfuse
+
+  chroma:
+    image: chromadb/chroma:latest
+    ports:
+      - "8000:8000"
+
+  langfuse:
+    image: langfuse/langfuse:latest
+    ports:
+      - "3000:3000"
