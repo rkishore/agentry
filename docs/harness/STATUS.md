@@ -72,3 +72,18 @@ The Planner authors `docs/harness/sprint-02-contract.md` before the Generator ru
   existed in the Phase 3 item. End-state is correct; flagged for the Planner, contract left unedited.
 - **`AGENTRY_USE_FAKES` couples the embedder and LLM axes** — one flag selects both; sprint 02
   previews splitting them so retrieval can be tuned against a fake LLM.
+
+## Flagged to Planner for sprint 02 (Evaluator, 2026-06-26)
+
+- **Reconcile carry-forward #1 with the gate reality.** The open item above states `openai`/
+  `anthropic` are "installed in the venv … real SDK stubs present." The Evaluator could not
+  reproduce this: under the canonical gate `make install` (`uv sync`, no `[real]` extra) **neither
+  package is installed** (`uv pip list` shows neither; `importlib.util.find_spec` is `None` for
+  both). mypy strict is green because `ignore_missing_imports = true` covers `openai.*`/`anthropic.*`
+  in the pyproject mypy override — i.e. the `self._client: Any` annotations (`llm.py:26,50`) are
+  driven by *absent* SDKs treated as `Any`, not by present stubs. No gate fails, so this did not
+  block sprint 01. But sprint 02 adds real `LlmClient` work, so the Planner should decide explicitly:
+  either (a) make the `[real]` SDKs part of the typechecked gate environment (drop the
+  `ignore_missing_imports` shortcut, get real stub coverage), or (b) keep them optional and update
+  the carry-forward note to state the real reason for `Any`. See Evaluator-observed memory
+  `evaluator-carryforward-verified`.
