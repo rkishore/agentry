@@ -14,14 +14,41 @@ authoritative one. Keep the two columns distinct so the Evaluator's independence
 
 | Sprint | Scope | Generator (self-report) | Evaluator (verified) | Commit |
 | --- | --- | --- | --- | --- |
-| 00 | Eval-first hexagonal skeleton (RAG slice, typed event stream, audit, tracing) | ✅ six gates green | ⏳ pending | `a71dcf9` |
-| 01 | Rename `app/`→`entrypoints/`; migrate `LlmClient` to `list[Message]` (behavior-preserving) | ✅ six gates green, fixture eval still `1.0` | ⏳ pending | `1b39238` |
+| 00 | Eval-first hexagonal skeleton (RAG slice, typed event stream, audit, tracing) | ✅ six gates green | ✅ PASS (2026-06-26) | `a71dcf9` |
+| 01 | Rename `app/`→`entrypoints/`; migrate `LlmClient` to `list[Message]` (behavior-preserving) | ✅ six gates green, fixture eval still `1.0` | ✅ PASS (2026-06-26) | `1b39238` |
 | 02 | First feature sprint (see below) | — contract not yet written | — | — |
 
 When the Evaluator runs, record its verdict here as `✅ PASS` / `❌ FAIL (gate N: …)` with the gate
 output it saw.
 
 Branch: `main` (sprint work lands directly on main, matching the harness flow).
+
+### Evaluator verdict — 2026-06-26 (independent session)
+
+Each sprint verified at its own commit (`git checkout <commit>`, full gate set run from that tree).
+Verdict is from observed command output only; Generator self-reports and the unverified carry-forward
+notes were treated as claims to check.
+
+**Sprint 00 (`a71dcf9`) — ✅ PASS, six gates green:**
+- Gate 1: `make install` ok; ruff `All checks passed` + `24 files already formatted`; mypy strict `Success: no issues found in 19 source files`.
+- Gate 2: `13 passed` in pytest, no skips; test-count cross-check `grep -rohE "def …" tests/ | wc -l` = `13` (matches collected).
+- Gate 3: import-linter `Contracts: 2 kept, 0 broken` (`Hexagonal layers`, `Core is dependency-free`); contract references `agentry.app`, correct for this sprint.
+- Gate 4: all named types present — 13 core models, 7 ports, 11 infra adapters, `app/` package (`composition.py`, `cli.py`).
+- Gate 5: no files/types outside contract observed.
+- Gate 6: `make slice` → `aggregate_score=1.0`; `test_slice_e2e.py` passes (CLI runs as `agentry.app.cli`).
+
+**Sprint 01 (`1b39238`) — ✅ PASS, six gates green:**
+- Gate 1: `make install` ok; ruff `All checks passed` + `24 files already formatted`; mypy strict `Success: no issues found in 19 source files`.
+- Gate 2: `15 passed`, no skips; test-count cross-check = `15` (matches collected).
+- Gate 3: import-linter `Contracts: 2 kept, 0 broken` with contract referencing `agentry.entrypoints`; `grep -rn "agentry.app\b"` finds **zero** refs in code/config/active docs (only the two historical contract files mention it).
+- Gate 4: `entrypoints/` package, `Message` frozen dataclass (`role: Literal[...]`, `content: str`), `LlmClient.complete(self, messages: list[Message])` across port + all three adapters, `build_messages()` returning `list[Message]`, and doc/config edits all present.
+- Gate 5: no scope creep; source tree is the Sprint-0 file set with `app/`→`entrypoints/` only. No FinanceBench/extraction/grading work.
+- Gate 6: `make slice` → `aggregate_score=1.0`, **identical to Sprint 0**; `test_slice_e2e.py` asserts the five event types + ≥1 OTel span; `LlmCallCompleted.prompt` preserved via `_flatten()` (`role: content` lines).
+
+**Carry-forward items (independently checked):**
+1. ⚠️ **Partially refuted.** The `self._client: Any` annotations exist (`llm.py:26,50`) and Gate 1 is green — but the claim "`openai`/`anthropic` are installed in the venv" is **not reproduced** under the canonical gate. After `make install` (`uv sync`, no `[real]` extra), `uv pip list` shows neither, and `importlib.util.find_spec` returns `None` for both. mypy strict passes via `ignore_missing_imports = true` (pyproject mypy override) on absent SDKs — not because real stubs are present. The annotation is real and harmless; the stated *cause* doesn't match the gate environment. Non-blocking (no gate fails), flagged for the Planner.
+2. ✅ **Confirmed.** `deferred.md` contains no `Message`-shape line (`grep -i message` → none); the contract's "remove" step was a no-op and the end-state is correct.
+3. ✅ **Confirmed.** A single `_use_fakes()` (`composition.py:26`) gates both `_select_embedder()` and `_select_llm()` — the embedder and LLM axes are coupled, as noted.
 
 ## Next: Sprint 02
 
